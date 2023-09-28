@@ -41,6 +41,15 @@ type TupleDesc struct {
 // are the same length
 func (d1 *TupleDesc) equals(d2 *TupleDesc) bool {
 	// TODO: some code goes here
+	if (len(d1.Fields) != len(d2.Fields)){
+		return false
+	}
+	for i:=0; i < len(d1.Fields); i++ {
+		d1Field, d2Field := d1.Fields[i], d2.Fields[i]
+		if (d1Field != d2Field){
+			return false
+		}
+	}
 	return true
 
 }
@@ -76,7 +85,12 @@ func findFieldInTd(field FieldType, desc *TupleDesc) (int, error) {
 // Look at the built-in function "copy".
 func (td *TupleDesc) copy() *TupleDesc {
 	// TODO: some code goes here
-	return &TupleDesc{} //replace me
+	var tdCopy TupleDesc
+	tdCopy.Fields = make([]FieldType, len(td.Fields))
+	for ndx, field := range td.Fields{
+		tdCopy.Fields[ndx] = field
+	}
+	return &tdCopy
 }
 
 // Assign the TableQualifier of every field in the TupleDesc to be the
@@ -96,8 +110,25 @@ func (td *TupleDesc) setTableAlias(alias string) {
 // appended onto the fields of desc.
 func (desc *TupleDesc) merge(desc2 *TupleDesc) *TupleDesc {
 	// TODO: some code goes here
-	return &TupleDesc{}  //replace me
+	var descMerged TupleDesc
+	descMerged = *desc.copy()
+	for _, field := range desc2.Fields{
+		descMerged.Fields = append(descMerged.Fields, field)
+	}
+	return &descMerged 
 }
+
+// Check whether a given field type is already contained within a given
+// TupleDesc object.
+func (tdFields *TupleDesc) tupleDescContainsField(field2 FieldType) bool{
+	for _, field := range tdFields.Fields{
+		if (field == field2){
+			return true
+		}
+	}
+	return false
+}
+
 
 // ================== Tuple Methods ======================
 
@@ -129,7 +160,7 @@ type Tuple struct {
 type recordID interface {
 }
 
-// Serialize the contents of the tuple into a byte array Since all tuples are of
+// Serialize the contents of the tuple into a byte array. Since all tuples are of
 // fixed size, this method should simply write the fields in sequential order
 // into the supplied buffer.
 //
