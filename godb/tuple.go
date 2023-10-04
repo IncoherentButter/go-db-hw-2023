@@ -185,7 +185,7 @@ type StringField struct {
 }
 
 // Tuple represents the contents of a tuple read from a database
-// It includes the tuple 	, and the value of the fields
+// It includes the tuple descriptor, and the value of the fields
 type Tuple struct {
 	Desc   TupleDesc
 	Fields []DBValue
@@ -217,7 +217,6 @@ func (t *Tuple) writeTo(b *bytes.Buffer) error {
 	for _, field := range t.Fields{
 		switch reflect.TypeOf(field).Name() {
 			case "StringField":
-				// fmt.Printf("string field = %v\n", field.(StringField).Value)
 				stringByteArray := []byte(field.(StringField).Value)
 				paddedByteArray := make([]byte, StringLength)
 				for i:=0; i< len(stringByteArray) && i < StringLength; i++{
@@ -227,33 +226,16 @@ func (t *Tuple) writeTo(b *bytes.Buffer) error {
 						paddedByteArray[i] = 0
 					}
 				}
-				// fmt.Printf("paddedByteArray = %v\n", paddedByteArray)
 
-				// paddedString := fmt.Sprintf("%-*s", StringLength - len(field.(StringField).Value) + 1, field)
-				// fmt.Printf("paddedString = %v\n", paddedString)
-				// stringToWrite := []byte(paddedString)
-				// fmt.Printf("writeTo stringToWrite = %v\n", stringToWrite)
 				if err := binary.Write(b, binary.LittleEndian, &paddedByteArray); err != nil{
 					return err
 				}
 			case "IntField":
 				intToWrite := int64(field.(IntField).Value)
-				// fmt.Printf("writeTo intToWrite = %v\n", intToWrite)
 				if err := binary.Write(b, binary.LittleEndian, &intToWrite); err != nil{
 					return err
 				}
 		}
-		// fieldType := reflect.TypeOf(field)
-		// if fieldType.Name() == "StringField"{
-		// 	paddedString := fmt.Sprintf("%-*s", StringLength, field)
-		// 	if err := binary.Write(b, binary.LittleEndian, []byte(paddedString)); err != nil{
-		// 		return err
-		// 	}
-		// } else {
-		// 	if err := binary.Write(b, binary.LittleEndian, field); err != nil{
-		// 		return err
-		// 	}
-		// }
 	}
 	return nil 
 }
@@ -274,52 +256,36 @@ func (t *Tuple) writeTo(b *bytes.Buffer) error {
 func readTupleFrom(b *bytes.Buffer, desc *TupleDesc) (*Tuple, error) {
 	// TODO: some code goes here
 	var tupleContents []DBValue
-	// fmt.Printf("readTupleFrom b = %v \ndesc = %v\n", b, desc)
 	// binary.Read(b, binary.LittleEndian, desc)
-	// fmt.Printf("b = %v \ndesc = %v\n", b, desc)
 	for _, fieldType := range desc.Fields{
-		// fmt.Printf("---\nfieldType = %v \n", fieldType)
 		switch fieldType.Ftype {
 			case 1:
 				stringObj := make([]byte, StringLength)
-				// fmt.Printf("stringObj = %v \n", stringObj)
 				if _, err := b.Read(stringObj); err != nil {
-					// fmt.Printf("str reading error = %v\n", err)
 					return nil, err
 				}
-				// fmt.Printf("readTupleFrom stringObj = %v \n", stringObj)
 				deserializedString := StringField{Value: string(removeTrailingZeros(stringObj))}
-				// fmt.Printf("readTupleFrom deserializedString = %v\n", deserializedString)
-				// stringObjByteArray := []byte()
 				tupleContents = append(tupleContents, deserializedString)
 			case 0:
 				var intObj int64
-				// fmt.Printf("readTupleFrom before int read, b = %v\n", b.Bytes())
-				// fmt.Printf("readTupleFrom intObj  = %v\n", intObj)
 				if err:= binary.Read(b, binary.LittleEndian, &intObj); err != nil{
-					// fmt.Printf("readTupleFrom int reading error = %v\n", err)
 					return nil, err
 				}
-				// fmt.Printf("readTupleFrom intObj  = %v\n", intObj)
 				deserializedInt := IntField{Value: intObj}
-				// fmt.Printf("readTupleFrom deserializedInt  = %v\n", deserializedInt)
 				tupleContents = append(tupleContents, deserializedInt)
 			default:
 				return nil, fmt.Errorf("Unsupported field type")
 		}
-		// fmt.Printf("tupleContents = %v \n", tupleContents)
 	}
 	tuple := &Tuple{
 		Fields: tupleContents,
 		Desc: *desc,
 		Rid: nil,
 	}
-	// fmt.Printf("tuple = %v\n", tuple)
 	return tuple, nil //replace me
 }
 
 func removeTrailingZeros(strByteArray []byte) []byte {
-	// fmt.Printf("strByteArray = %v\n", strByteArray)
 	i := len(strByteArray) - 1
 	isTrailingZeros := true
 	for isTrailingZeros {
@@ -330,7 +296,6 @@ func removeTrailingZeros(strByteArray []byte) []byte {
 		}
 	}
 	trimmedString := strByteArray[:i+1]
-	// fmt.Printf("trimmedString = %v\n", trimmedString)
 	return trimmedString
 }
 
@@ -356,12 +321,8 @@ func (t1 *Tuple) equals(t2 *Tuple) bool {
 // Merge two tuples together, producing a new tuple with the fields of t2 appended to t1.
 func joinTuples(t1 *Tuple, t2 *Tuple) *Tuple {
 	// TODO: some code goes here
-	// fmt.Printf("t1 = %v \nt2 = %v\n", t1, t2)
 	joinedDesc := t1.Desc.merge(&t2.Desc)
-	// fmt.Printf("joinedDesc = %v\n", joinedDesc)
-	// joinedFields := append(t1.Fields, t2.Fields)
 	joinedFields := joinTupleFields(t1, t2)
-	// fmt.Printf("joinedFields = %v", joinedFields)
 	joinedTuple := Tuple{
 		Desc: *joinedDesc,
 		Fields: joinedFields,
@@ -406,29 +367,23 @@ const (
 // expression on the supplied tuple.
 func (t *Tuple) compareField(t2 *Tuple, field Expr) (orderByState, error) {
 	// TODO: some code goes here
-	// fmt.Printf("field = %v \n", field)
-	// fmt.Printf("t = %v \n", *&t.Fields)
-	// fmt.Printf("t2 = %v \n", *&t2.Fields)
 	if (t == nil || t2 == nil){
 		return OrderedEqual, fmt.Errorf("t or t2 are nil *Tuple objects")
 	} else if (field == nil){
 		return OrderedEqual, fmt.Errorf("no field expression provided")
 	}
-	// fmt.Printf("field type = %v \n", reflect.TypeOf(field))
 	tDbValOfExpr, err := field.EvalExpr(t)
 	if err != nil{
 		return OrderedEqual, err
 	} else if tDbValOfExpr == nil{
 		return OrderedEqual, fmt.Errorf("tuple doesn't match field")
 	}
-	// fmt.Printf("tDbValOfExpr %v \n", tDbValOfExpr)
 	t2DbValOfExpr, err2 := field.EvalExpr(t2)
 	if err2 != nil{
 		return OrderedEqual, err2
 	} else if t2DbValOfExpr == nil{
 		return OrderedEqual, fmt.Errorf("tuple2 doesn't match field")
 	}
-	// fmt.Printf("t2DbValOfExpr %v \n", t2DbValOfExpr)
 	switch tDbValType := tDbValOfExpr.(type){
 		case IntField:
 			t2DbValInt, isIntField := t2DbValOfExpr.(IntField)
@@ -463,25 +418,20 @@ func (t *Tuple) compareField(t2 *Tuple, field Expr) (orderByState, error) {
 // entry t2.name in t, but only if there is not an entry t1.name in t)
 func (t *Tuple) project(fields []FieldType) (*Tuple, error) {
 	// TODO: some code goes here
-	// fmt.Printf("t.Fields  = %v \n", t.Fields)
-	// fmt.Printf("fields  = %v \n", fields)
 	projectedFields := make([]DBValue, 0)
 	for _, field := range fields{
 		isTupleContainsField, matchingIndex := t.Desc.tupleDescContainsField(field)
 		isTableQualifierMatch, matchingTupleField := t.checkTableQualifier(field)
 		if (isTableQualifierMatch){
-			// fmt.Printf("table qualifier match with field = %v, matchingTupleField = %v \n", field, matchingTupleField)
 			projectedFields = append(projectedFields, matchingTupleField)
 			break
 		} else if (isTupleContainsField){
-			// fmt.Printf("non TQ match with field = %v \n", field)
 			projectedFields = append(projectedFields, t.Fields[matchingIndex])
 			break 
 		} else {
 			return nil, fmt.Errorf("field %v was not in the supplied tuple", t)
 		}
 	}
-	// fmt.Printf("project projectedFields = %v \n", projectedFields)
 	projectedTuple := Tuple{
 		Fields: projectedFields,
 		Desc: t.Desc,

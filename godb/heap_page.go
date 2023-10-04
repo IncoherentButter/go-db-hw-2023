@@ -61,7 +61,6 @@ type heapPage struct {
 // Construct a new heap page
 func newHeapPage(desc *TupleDesc, pageNo int, f *HeapFile) *heapPage {
 	// TODO: some code goes here
-	fmt.Printf("-----\nnewHeapPage: desc = %v; pageNo = %v\n", desc, pageNo)
 	return &heapPage{
 		desc:     desc,
 		pageNo:   pageNo,
@@ -73,17 +72,10 @@ func newHeapPage(desc *TupleDesc, pageNo int, f *HeapFile) *heapPage {
 
 func (h *heapPage) getNumSlots() int {
 	// TODO: some code goes here
-	// fmt.Printf("-----\nheap_page.getNumSlots(): HeapPage h = %v\n", h)
 	remPageSize := PageSize - 8 // bytes after header
-	// fmt.Printf("heap_page.getNumSlots(): remPageSize = %v\n", remPageSize)
 	bytesPerTuple := h.desc.size()
-	// fmt.Printf("heap_page.getNumSlots(): bytesPerTuple = %v\n", bytesPerTuple)
 	numSlots := remPageSize / bytesPerTuple //integer division will round down
 	
-	// var int64sizeof int = int(unsafe.Sizeof(int64(0)))
-	// fmt.Printf("heap_page.getNumSlots() StringLength = %v\n", StringLength)
-	// fmt.Printf("heap_page.getNumSlots() int64sizeof = %v\n", int64sizeof)
-	// fmt.Printf("heap_page.getNumSlots(): numSlots = %v\n------", numSlots)
 
 	return numSlots
 }

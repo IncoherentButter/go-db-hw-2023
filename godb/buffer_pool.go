@@ -262,20 +262,13 @@ func (bp *BufferPool) BeginTransaction(tid TransactionID) error {
 // of pages in the BufferPool in a map keyed by the [DBFile.pageKey].
 func (bp *BufferPool) GetPage(file DBFile, pageNo int, tid TransactionID, perm RWPerm) (*Page, error) {
 	// TODO: some code goes here
-
-	fmt.Printf("*****bp.GetPage() pageNo = %v, tid = %v, perm = %v\n", pageNo, tid, perm)
-
-
 	// get unique page key to check if it's already in buffer pool
 	pageKey := file.pageKey(pageNo)
-	// fmt.Printf("bp.GetPage() pageKey = %v\n", pageKey)
 	var uniquePageKey string
 	if pageKeyObj, isHeapHash := pageKey.(*heapHash); isHeapHash{
 		uniquePageKey = fmt.Sprintf("%s:%d", pageKeyObj.FileName, pageKeyObj.PageNo)
-		fmt.Printf("bp.GetPage() uniquePageKey = %v\n", uniquePageKey)
 
 	} else{
-		fmt.Printf("bp.GetPage() pageKeyObj is not a heapHash\n")
 		return nil, fmt.Errorf("page key is not a string")
 	}
 
@@ -284,11 +277,8 @@ func (bp *BufferPool) GetPage(file DBFile, pageNo int, tid TransactionID, perm R
 
 	// check if page in buffer pool; if so, move posn in the DLL
 	if pageFrameIndex, isPageInBuffer := bp.pageIndexMap[uniquePageKey]; isPageInBuffer{
-		fmt.Printf("bp.GetPage() page in buffer\n pageFrameIndex = %v\n", pageFrameIndex)
 		pageFrameInBuffer := bp.frames[pageFrameIndex]
-		fmt.Printf("bp.GetPage() pageFrameInBuffer = %v\n", pageFrameInBuffer)
 		pageNode := bp.pageNodeMap[uniquePageKey]
-		fmt.Printf("bp.GetPage() pageNode = %v\n", pageNode)
 		// if page was already in buffer, we move its position to front for LRU ordering purposes
 		bp.order.MoveToFront(pageNode)
 		return pageFrameInBuffer.page, nil
@@ -297,7 +287,6 @@ func (bp *BufferPool) GetPage(file DBFile, pageNo int, tid TransactionID, perm R
 	// if page not in buffer pool, read it from disk
 	pageFromDisk, diskReadError := file.readPage(pageNo)
 	if diskReadError != nil{
-		fmt.Printf("bp.GetPage() diskReadError\n ERROR = %v", diskReadError)
 		return nil, diskReadError
 	}
 
@@ -305,106 +294,21 @@ func (bp *BufferPool) GetPage(file DBFile, pageNo int, tid TransactionID, perm R
 	
 	// if BP is full, try evicting a non-dirty page; if all dirty, throw err
 	if bp.currentSize == bp.capacity{
-		fmt.Printf("bp.GetPage() bp.currentSize = %v == bp.capacity = %v\n", bp.currentSize, bp.capacity)
 
 		evictedPageNode, isAllDirty, evictedNdx := bp.evictPage()
-		fmt.Printf("bp.GetPage() isAllDirty = %v; evictedNdx = %v\n", isAllDirty, evictedNdx)
-		fmt.Printf("bp.GetPage() evictedPageNode = %v\n", evictedPageNode)
-
-
 		// if evicted is nil, then everything is dirty and we need to throw an error
 		// or 
 		if evictedPageNode == nil && isAllDirty{  
-			fmt.Printf("bp.GetPage() evictedPageNode is nil and everything is dirty\n")
 			return nil, fmt.Errorf("all pages are dirty, can't evict anything")
 		} else {
-			fmt.Printf("bp.GetPage() inserting page from disk into BP\n")
 			bp.insertPage(pageFromDisk, uniquePageKey, evictedNdx)
 			return pageFromDisk, nil
 		}
 		
 	} else{
 		bp.currentSize++ 
-		fmt.Printf("bp.GetPage() bp.currentSize = %v\n", bp.currentSize)
 
 		bp.insertPage(pageFromDisk, uniquePageKey, -1) // insert at first available index
 		return pageFromDisk, nil
 	}
-
-	// // add the new page to the end of the buffer pool & make corresponding PageNode
-	// frameForPage := &Frame{page: pageFromDisk}
-	// // bp.frames = append(bp.frames, frameForPage)
-	// frameNdx := len(bp.frames) - 1 // ndx is at end of the slice
-
-	// pageNode := &PageNode{
-	// 	key: uniquePageKey,
-	// 	frameNdx: frameNdx,
-	// 	isDirty: false,
-	// 	page: pageFromDisk,
-	// }
-	// bp.order.Append(pageNode)
-	// bp.pageNodeMap[uniquePageKey] = pageNode
-	// bp.pageIndex[uniquePageKey] = frameNdx
-
-	// return pageFromDisk, nil
-
-
-
-	// // unique key for hashing to get the file
-	// pageKey := file.pageKey(pageNo)
-	// fileKeyVal, isHeapHash := pageKey.(*heapHash)
-	// if !isHeapHash{
-	// 	return nil, fmt.Errorf("file.pageKey(pageNo) was not of type *heapHash")
-	// }
-	// fileKey := fmt.Sprintf("%s|%d", fileKeyVal.FileName, fileKeyVal.PageNo)
-	// fmt.Printf("buffer_pool.GetPage fileKey = %v\n", fileKey)
-
-	// // if page already in buffer pool, move to front of list
-	// if frameNdx, isPageInBuffer:= bp.pageIndex[fileKey]; isPageInBuffer{
-	// 	frame := bp.frames[frameNdx]
-	// 	bp.order.MoveToFront(bp.pageNodeMap[fileKey]) // move page to front since it's most recently accessed
-	// 	return frame.page, nil
-	// }
-
-	// // if page not in buffer pool, read it from file
-	// readPage, readErr := file.readPage(pageNo)
-	// if readErr != nil {return nil, readErr} 
-
-	// // if buffer pool full, try to evict a page
-	// if bp.currentSize == bp.capacity{
-	// 	evictedNode := bp.order.Evict()
-	// 	// if evictedNode is nil, everything is dirty and we can't evict
-	// 	if evictedNode == nil{
-	// 		bp.FlushAllPages()
-	// 		// try evicting again; if still nil, then buffer is all dirty
-	// 		evictedNode = bp.order.Evict()
-	// 		if evictedNode == nil{
-	// 			return nil, fmt.Errorf("Buffer pool has only dirty pages; no eviction allowed")
-	// 		}
-	// 	}
-	// 	// clean up structures for evicted page
-	// 	delete(bp.pageIndex, evictedNode.key)
-	// 	delete(bp.pageNodeMap, evictedNode.key)
-	// 	bp.frames[evictedNode.frameNdx] = nil
-	// } else {
-	// 	bp.currentSize++
-	// }
-
-	// // add the new page to the end of the buffer pool & make corresponding PageNode
-	// frameForPage := &Frame{page: readPage}
-	// bp.frames = append(bp.frames, frameForPage)
-	// frameNdx := len(bp.frames) - 1 // ndx is at end of the slice
-
-	// pageNode := &PageNode{
-	// 	key: fileKey,
-	// 	frameNdx: frameNdx,
-	// 	isDirty: false,
-	// 	page: readPage,
-	// }
-	// bp.order.Append(pageNode)
-	// bp.pageNodeMap[fileKey] = pageNode
-	// bp.pageIndex[fileKey] = frameNdx
-
-	// return readPage, nil
-
 }

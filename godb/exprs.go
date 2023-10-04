@@ -24,7 +24,6 @@ type FieldExpr struct {
 func (f *FieldExpr) EvalExpr(t *Tuple) (DBValue, error) {
 	outTup, err := t.project([]FieldType{f.selectField})
 	if err != nil {
-		fmt.Printf("err in project: %s", err.Error())
 		return nil, err
 	}
 	if (outTup == nil){
