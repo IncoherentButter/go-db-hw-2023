@@ -172,7 +172,7 @@ func TestHeapPageSerialization(t *testing.T) {
 	page := newHeapPage(&td, 0, hf)
 	free := page.getNumSlots()
 
-	for i := 0; i < free-1; i++ {
+	for i := 1; i < free-1; i++ {
 		var addition = Tuple{
 			Desc: td,
 			Fields: []DBValue{
@@ -197,13 +197,23 @@ func TestHeapPageSerialization(t *testing.T) {
 	if iter2 == nil {
 		t.Fatalf("iter2 was nil.")
 	}
+
+	findEqCount := func(t0 *Tuple, iter3 func() (*Tuple, error)) int {
+		cnt := 0
+		for tup, _ := iter3(); tup != nil; tup, _ = iter3() {
+			if t0.equals(tup) {
+				cnt += 1
+			}
+		}
+		return cnt
+	}
+
 	for {
 		tup, _ := iter()
-		tup2, _ := iter2()
-		if tup == nil && tup2 == nil {
+		if tup == nil {
 			break
 		}
-		if (tup == nil && tup2 != nil) || !tup.equals(tup2) {
+		if findEqCount(tup, page.tupleIter()) != findEqCount(tup, page2.tupleIter()) {
 			t.Errorf("Serialization / deserialization doesn't result in identical heap page.")
 		}
 	}

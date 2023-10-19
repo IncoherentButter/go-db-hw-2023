@@ -24,10 +24,8 @@ type FieldExpr struct {
 func (f *FieldExpr) EvalExpr(t *Tuple) (DBValue, error) {
 	outTup, err := t.project([]FieldType{f.selectField})
 	if err != nil {
+		//fmt.Printf("err in project: %s", err.Error())
 		return nil, err
-	}
-	if (outTup == nil){
-		return nil, nil
 	}
 	return outTup.Fields[0], nil
 
@@ -213,14 +211,6 @@ func subStrFunc(args []any) any {
 }
 
 func (f *FuncExpr) EvalExpr(t *Tuple) (DBValue, error) {
-	// For debugging purposes
-	if t == nil {
-        return nil, fmt.Errorf("Tuple t is nil in EvalExpr")
-    }
-    if f == nil {
-        return nil, fmt.Errorf("FieldExpr f is nil in EvalExpr")
-    }
-
 	fType, exists := funcs[f.op]
 	if !exists {
 		return nil, GoDBError{ParseError, fmt.Sprintf("unknown function %s", f.op)}

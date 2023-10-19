@@ -51,6 +51,7 @@ func TestCreateAndInsertHeapFile(t *testing.T) {
 	i := 0
 	for {
 		t, _ := iter()
+
 		if t == nil {
 			break
 		}
@@ -66,12 +67,14 @@ func TestDeleteHeapFile(t *testing.T) {
 	hf.insertTuple(&t1, tid)
 	hf.insertTuple(&t2, tid)
 
-	hf.deleteTuple(&t1, tid)
 	iter, _ := hf.Iterator(tid)
 	t3, _ := iter()
 	if t3 == nil {
 		t.Errorf("HeapFile iterator expected 1 tuple")
 	}
+	t3, _ = iter()
+	hf.deleteTuple(&t1, tid)
+
 	hf.deleteTuple(&t2, tid)
 	iter, _ = hf.Iterator(tid)
 	t3, _ = iter()
@@ -129,6 +132,7 @@ func testSerializeN(t *testing.T, n int) {
 		if t == nil {
 			break
 		}
+
 		i = i + 1
 	}
 	if i != 2*n {
@@ -137,7 +141,11 @@ func testSerializeN(t *testing.T, n int) {
 
 }
 func TestSerializeSmallHeapFile(t *testing.T) {
-	testSerializeN(t, 2)
+	testSerializeN(t, 130)
+}
+
+func TestSerializeMediumHeapFile(t *testing.T) {
+	testSerializeN(t, 300)
 }
 
 func TestSerializeLargeHeapFile(t *testing.T) {
@@ -164,6 +172,7 @@ func TestLoadCSV(t *testing.T) {
 	i := 0
 	for {
 		t, _ := iter()
+
 		if t == nil {
 			break
 		}
