@@ -117,5 +117,27 @@ func evalPred[T constraints.Ordered](i1 T, i2 T, op BoolOp) bool {
 		return match
 	}
 	return false
-
 }
+
+// func evalPredComparables[T any](i1 T, i2 T, op BoolOp) bool {
+// 	switch op {
+// 	case OpEq:
+// 		return i1 == i2
+// 	case OpNeq:
+// 		return i1 != i2
+// 	case OpLike:
+// 		s1, ok := any(i1).(string)
+// 		if !ok {
+// 			return false
+// 		}
+// 		regex, ok := any(i2).(string)
+// 		if !ok {
+// 			return false
+// 		}
+// 		regex = "^" + regex + "$"
+// 		regex = strings.Replace(regex, "%", ".*?", -1)
+// 		match, _ := regexp.MatchString(regex, s1)
+// 		return match
+// 	}
+// 	return false
+// }
