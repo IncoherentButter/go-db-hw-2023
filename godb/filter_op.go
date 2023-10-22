@@ -72,17 +72,18 @@ func (f *Filter[T]) Iterator(tid TransactionID) (func() (*Tuple, error), error) 
 
 	return func() (*Tuple, error)  {
 		for {
+			// iterate to next tuple
 			currentTuple, iterationError = childIterator()
 			if iterationError != nil || currentTuple == nil {return nil, iterationError}
-
+ 
+			// evaluate tuple w/ left and right operators
 			leftEvaluation, leftEvalErr := f.left.EvalExpr(currentTuple)
 			if leftEvalErr != nil {return nil, leftEvalErr}
 			rightEvaluation, rightEvalErr := f.right.EvalExpr(currentTuple)
 			if rightEvalErr != nil {return nil, rightEvalErr}
 			
-			
+			// operate on left and right results
 			predicateEvaluation := evalPred(f.getter(leftEvaluation), f.getter(rightEvaluation), f.op)
-			// if evalPredErr != nil {return nil, evalPredErr}
 			
 			// if predicateEvaluation is not nil, then we satisfied predicate --> return current tuple
 			if predicateEvaluation {
