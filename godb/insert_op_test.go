@@ -35,6 +35,13 @@ func TestInsert(t *testing.T) {
 	}
 	intField, ok := tup.Fields[0].(IntField)
 	if !ok || len(tup.Fields) != 1 || intField.Value != 2 {
+		if !ok{
+			t.Errorf("not ok")
+		} else if (len(tup.Fields) != 1){
+			t.Errorf("tup fields aren't 1")
+		} else if (intField.Value != 2){
+			t.Errorf("intfield Value isn't 2")
+		}
 		t.Errorf("invalid output tuple")
 		return
 	}

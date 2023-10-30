@@ -77,8 +77,8 @@ func (hj *EqualityJoin[T]) Descriptor() *TupleDesc {
 // out.  To pass this test, you will need to use something other than a nested
 // loops join.
 func (joinOp *EqualityJoin[T]) Iterator(tid TransactionID) (func() (*Tuple, error), error) {
-	joinOp.printTuples(tid)
-	fmt.Printf("=========\n\n")
+	// joinOp.printTuples(tid)
+	// fmt.Printf("=========\n\n")
 	// // TODO: some code goes here
 	leftOperator := (*joinOp.left)
 	leftIterator, leftIteratorErr := leftOperator.Iterator(tid)
@@ -109,12 +109,7 @@ func (joinOp *EqualityJoin[T]) Iterator(tid TransactionID) (func() (*Tuple, erro
 
 	leftCounter += 1
 
-	// rightCurrentTuple, rightIterationError = rightIterator()
-	// if rightIterationError != nil || rightCurrentTuple == nil {return nil, rightIterationError}
-
-	// rightCounter += 1
-	// fmt.Printf("Number of fields in left operator:%v\n", len(leftOperator.Descriptor().Fields))
-	// fmt.Printf("Number of fields in right operator:%v\n", len(rightOperator.Descriptor().Fields))
+	
 
 	// fmt.Printf("leftCounter = %v / rightCounter = %v\n", leftCounter, rightCounter)
 	counter := -1
@@ -130,10 +125,6 @@ func (joinOp *EqualityJoin[T]) Iterator(tid TransactionID) (func() (*Tuple, erro
 			// joinOp.printTupleValue(false, rightCurrentTuple, tid)
 			rightCounter += 1
 			// fmt.Printf("--------------\njoin_op.Iterator | start of loop - counter = %v\n(l, r) = (%v, %v)\n", counter, leftCounter, rightCounter)
-			if (rightCounter == 1 && counter >= 4){
-				// fmt.Printf("right tuple should give 999")
-				joinOp.printTupleValue(false, rightCurrentTuple, tid)
-			}
 			// if reach end of Right Table, reset right iterator and iterate the left iterator
 			if rightCurrentTuple == nil {
 				if rightCounter != -1 { // iterate left table unless this is beginning
@@ -154,110 +145,11 @@ func (joinOp *EqualityJoin[T]) Iterator(tid TransactionID) (func() (*Tuple, erro
 			isEqual, _ := joinOp.checkValues(leftCurrentTuple, rightCurrentTuple)
 			if isEqual {
 				joinedTuple := joinTuples(leftCurrentTuple, rightCurrentTuple)
-				joinOp.printTupleValue(true, joinedTuple, tid)
-				joinOp.printTupleValue(false, joinedTuple, tid)
+				// joinOp.printTupleValue(true, joinedTuple, tid)
+				// joinOp.printTupleValue(false, joinedTuple, tid)
 				return joinedTuple, nil
 			}
 		}
-
-		// // if there's no match found after looping over everything, then return nil
-		// for counter < 50 {
-		// 	fmt.Printf("--------------\njoin_op.Iterator | counter = %v, (l, r) = (%v, %v)\n", counter, leftCounter, rightCounter)
-		// 	if leftCurrentTuple == nil {return nil, nil} // end of iteration
-
-		// 	// if the right iterator needs to go back to start of right table, reset it
-		// 	if (needResetRightIterator){
-		// 		needResetRightIterator = false
-		// 		fmt.Printf("join_op.Iterator | RESET RIGHT ITERATOR\n")
-		// 		rightIterator, rightIteratorErr := rightOperator.Iterator(tid)
-		// 		if rightIteratorErr != nil {return nil, rightIteratorErr}
-		// 		rightCounter = -1
-
-		// 		// note: check that we dont miss first tuple
-				// rightCurrentTuple, rightIterationError = rightIterator()
-				// if rightIterationError != nil || rightCurrentTuple == nil {return nil, rightIterationError}
-		// 		rightCounter += 1
-		// 		fmt.Printf("rightCounter inc'd\n")
-		// 		fmt.Printf("join_op.Iterator | Checking vals with leftCounter = %v and rightCounter = %v\n", leftCounter, rightCounter)
-		// 		// joinOp.checkValues(leftCurrentTuple, rightCurrentTuple)
-		// 	} else {
-		// 		fmt.Printf("join_op.Iterator | iterating right tuple\n")
-		// 		rightCurrentTuple, _ = rightIterator()
-		// 		rightCounter += 1
-		// 		fmt.Printf("rightCounter inc'd\n")
-		// 		fmt.Printf("join_op.Iterator | rightCounter inc'd: Checking vals with leftCounter = %v and rightCounter = %v\n", leftCounter, rightCounter)
-		// 		// joinOp.checkValues(leftCurrentTuple, rightCurrentTuple)
-		// 		// rightCurrentTuple, rightIterationError = rightIterator()
-		// 		// if rightIterationError != nil || rightCurrentTuple == nil {return nil, rightIterationError}
-		// 	}
-
-		// 	// if the right iterator/tuple is at end of file, move left tuple
-		// 	// and then mark down that we need to reset the right iterator
-		// 	if rightIterationError == io.EOF || rightCurrentTuple == nil{
-		// 		fmt.Printf("join_op.Iterator | Right tuple is nil or EOF\n")
-		// 		// iterate left table's tuple if we aren't currently iterating thru right tuples
-		// 		leftCurrentTuple, leftIterationError = leftIterator()
-		// 		if leftIterationError != nil || leftCurrentTuple == nil {return nil, leftIterationError}
-		// 		leftCounter += 1
-		// 		fmt.Printf("leftCounter inc'd\n")
-		// 		fmt.Printf("join_op.Iterator | leftCounter inc'd: Checking vals with leftCounter = %v and rightCounter = %v\n", leftCounter, rightCounter)
-		// 		// joinOp.checkValues(leftCurrentTuple, rightCurrentTuple)
-		// 		fmt.Printf("join_op.Iterator | leftCounter is %v\n", leftCounter)
-
-		// 		// fmt.Printf("join_op.Iterator | leftCurrentTuple is %T\n", leftCurrentTuple)
-
-		// 		//after moving left iterator, reset right one
-		// 		needResetRightIterator = true
-		// 		// rightIterator, rightIteratorErr := rightOperator.Iterator(tid)
-		// 		// if rightIteratorErr != nil {return nil, rightIteratorErr}
-		// 		counter += 1
-		// 		continue
-		// 	} else{
-		// 		fmt.Printf("join_op.Iterator | right tuple was not nil or at EOF\n")
-		// 	}
-
-		// 	// get next right tuple
-		// 	if rightIterationError != nil || rightCurrentTuple == nil {return nil, rightIterationError}
-		// 	// fmt.Printf("join_op.Iterator | rightCurrentTuple is %T\n", rightCurrentTuple)
-
-		// 	// matching logic
-
-		// 	// leftEvaluation, leftEvalErr := joinOp.leftField.EvalExpr(leftCurrentTuple)
-		// 	// if leftEvalErr != nil {return nil, leftEvalErr}
-		// 	// // fmt.Printf("join_op.Iterator | leftEvaluation is %T\n", leftEvaluation)
-
-		// 	// rightEvaluation, rightEvalErr := joinOp.rightField.EvalExpr(rightCurrentTuple) // DBValue, err
-		// 	// if rightEvalErr != nil {return nil, rightEvalErr}
-		// 	// // fmt.Printf("join_op.Iterator | rightEvaluation is %T\n", rightEvaluation)
-
-		// 	// leftVal := joinOp.getter(leftEvaluation)
-		// 	// rightVal := joinOp.getter(rightEvaluation)
-
-		// 	// fmt.Printf("join_op.Iterator | leftVal is %v\n", leftVal)
-		// 	// fmt.Printf("join_op.Iterator | rightVal is %v\n", rightVal)
-
-		// 	// fmt.Printf("join_op.Iterator | type(leftVal) is %T\n", leftVal)
-		// 	// fmt.Printf("join_op.Iterator | type(rightVal) is %T\n", rightVal)
-		// 	fmt.Printf("join_op.Iterator | Checking vals with leftCounter = %v and rightCounter = %v\n", leftCounter, rightCounter)
-		// 	isEqual, _ := joinOp.checkValues(leftCurrentTuple, rightCurrentTuple)
-		// 	if isEqual {
-		// 		joinedTuple := joinTuples(leftCurrentTuple, rightCurrentTuple)
-		// 		fmt.Printf("join_op.Iterator | isEQual is true; returning %v\n", joinedTuple)
-		// 		counter += 1
-		// 		return joinedTuple, nil
-		// 		// isEqual = false
-		// 	} else{
-		// 		// rightCurrentTuple, rightIterationError = rightIterator()
-		// 		// if rightIterationError != nil || rightCurrentTuple == nil {return nil, rightIterationError}
-
-		// 		// rightEvaluation, rightEvalErr := joinOp.rightField.EvalExpr(rightCurrentTuple) // DBValue, err
-		// 		// if rightEvalErr != nil {return nil, rightEvalErr}
-		// 		// rightVal := joinOp.getter(rightEvaluation)
-		// 		// fmt.Printf("join_op.Iterator | isEQual is FALSE; iterated right tuple val is %v\n", rightVal)
-		// 		fmt.Printf("join_op.Iterator | isEQual is FALSE\n")
-		// 	}
-		// 	counter += 1
-		// }
 		return nil, nil
 	}, nil
 }
@@ -309,12 +201,12 @@ func (joinOp *EqualityJoin[T]) printTupleValue(isLeft bool, tuple *Tuple, tid Tr
 		leftEvaluation, _ := joinOp.leftField.EvalExpr(tuple)
 		leftVal := joinOp.getter(leftEvaluation)
 	
-		// fmt.Printf("\n LEFT TUPLE VAL = %v\n", leftVal)
+		fmt.Printf("\n LEFT TUPLE VAL = %v\n", leftVal)
 	} else{
 		rightEvaluation, _ := joinOp.leftField.EvalExpr(tuple)
 		rightVal := joinOp.getter(rightEvaluation)
 	
-		// fmt.Printf("\n RIGHT TUPLE VAL = %v\n", rightVal)
+		fmt.Printf("\n RIGHT TUPLE VAL = %v\n", rightVal)
 	}
 
 }
@@ -339,8 +231,8 @@ func (joinOp *EqualityJoin[T]) checkValues(leftTuple *Tuple, rightTuple *Tuple) 
 	// fmt.Printf("join_op.Iterator | type(rightVal) is %T\n", rightVal)
 	isEqual := leftVal == rightVal
 
-	fmt.Printf("join_op.Iterator | leftVal is %v\n", leftVal)
-	fmt.Printf("join_op.Iterator | rightVal is %v\n isEqual = %v\n", rightVal, isEqual)
+	// fmt.Printf("join_op.Iterator | leftVal is %v\n", leftVal)
+	// fmt.Printf("join_op.Iterator | rightVal is %v\n isEqual = %v\n", rightVal, isEqual)
 	return isEqual, nil
 
 }

@@ -3,6 +3,7 @@ package godb
 import (
 	"bytes"
 	"testing"
+	"fmt"
 )
 
 func CheckIfOutputMatches(f func() (*Tuple, error), ts []*Tuple) bool {
@@ -12,9 +13,10 @@ func CheckIfOutputMatches(f func() (*Tuple, error), ts []*Tuple) bool {
 		if t1 == nil {
 			break
 		}
-		//		fmt.Printf("%v\n", t1)
+		fmt.Printf("TEST t1 = %v\n", *t1)
 		got := false
 		for _, t2 := range ts {
+			fmt.Printf("TEST t2 = %v\n", *t2)
 			if t1.equals(t2) {
 				got = true
 				break

@@ -70,7 +70,6 @@ func TestOrderBy(t *testing.T) {
 		last = fval
 
 	}
-
 }
 
 // harder order by test that inserts 4 tuples, and alternates ascending vs descending

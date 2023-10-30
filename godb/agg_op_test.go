@@ -1,15 +1,16 @@
 package godb
 
 import (
-	"testing"
+	"testing";
 )
 
 func TestSimpleSumAgg(t *testing.T) {
 	_, t1, t2, hf, _, tid := makeTestVars()
-
+	// fmt.Printf("t1 = %v\nt2 = %v\nhf = %v\ntid = %v\n", t1, t2, hf, tid)
 	hf.insertTuple(&t1, tid)
 	hf.insertTuple(&t2, tid)
-	sa := SumAggState[int64]{}
+	sa := SumAggState[int64]{} // tracks sum int64
+	// fmt.Printf("t1.Desc = %v\nt2.Desc = %v\nt1.Desc.Fields[1] = %v\n", t1.Desc, t2.Desc, t1.Desc.Fields[1])
 	expr := FieldExpr{t1.Desc.Fields[1]}
 	sa.Init("sum", &expr, intAggGetter)
 	agg := NewAggregator([]AggState{&sa}, hf)

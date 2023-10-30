@@ -265,7 +265,7 @@ func parseFrom(c *Catalog, t sqlparser.TableExpr) ([]*LogicalTableNode, []*Logic
 			}
 		case sqlparser.SimpleTableExpr:
 			tableName := strings.ToLower(sqlparser.GetTableName(tableEx.Expr).CompliantName())
-			//fmt.Printf("got simple table, name %s\n", tableName)
+			fmt.Printf("got simple table, name %s\n", tableName)
 			dbFile, err := c.GetTable(tableName)
 			if err != nil {
 				return nil, nil, nil, err

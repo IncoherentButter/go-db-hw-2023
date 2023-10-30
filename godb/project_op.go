@@ -1,9 +1,13 @@
 package godb
 
+import "fmt"
+
 type Project struct {
 	selectFields []Expr // required fields for parser
 	outputNames  []string
 	child        Operator
+	distinct	 bool 
+	seenTuples 	 map[any]bool
 	//add additional fields here
 	// TODO: some code goes here
 }
@@ -15,7 +19,17 @@ type Project struct {
 // only distinct results, and child is the child operator.
 func NewProjectOp(selectFields []Expr, outputNames []string, distinct bool, child Operator) (Operator, error) {
 	// TODO: some code goes here
-	return nil, nil
+	//len(outputNames) == len(selectFields)
+	if len(selectFields) != len(outputNames) {
+		return nil, fmt.Errorf("outputNames and selectFields are different length")
+	}
+	return &Project{
+		selectFields: selectFields,
+		outputNames: outputNames,
+		child: child,
+		distinct: distinct,
+		seenTuples: make(map[any]bool),
+	}, nil
 }
 
 // Return a TupleDescriptor for this projection. The returned descriptor should contain
@@ -24,7 +38,21 @@ func NewProjectOp(selectFields []Expr, outputNames []string, distinct bool, chil
 // HINT: you can use expr.GetExprType() to get the field type
 func (p *Project) Descriptor() *TupleDesc {
 	// TODO: some code goes here
-	return nil
+	selectFieldTypes := make([]FieldType, len(p.selectFields))
+	for i, selectField := range p.selectFields{
+		// exprFieldType := selectField.GetExprType()
+		// want: DBType from : FieldType
+		selectFieldTypes[i] = selectField.GetExprType()
+		// selectFieldTypes[i] = FieldType{
+		// 	Fname: p.outputNames[i],
+		// 	TableQualifier: p.outputNames[i],
+		// 	Ftype: selectField.GetExprType(), // FieldType
+		// } 
+	}
+	projectTupleDesc := TupleDesc{
+		Fields: selectFieldTypes,
+	}
+	return &projectTupleDesc
 
 }
 
@@ -36,5 +64,41 @@ func (p *Project) Descriptor() *TupleDesc {
 // optional as specified in the lab 2 assignment.
 func (p *Project) Iterator(tid TransactionID) (func() (*Tuple, error), error) {
 	// TODO: some code goes here
-	return nil, nil
+
+	childIterator, createIteratorErr := p.child.Iterator(tid)
+	if createIteratorErr != nil{return nil, createIteratorErr}
+
+	return func() (*Tuple, error) {
+		for{
+			// iterate to next tuple
+			tuple, childIteratorErr := childIterator() 
+			if childIteratorErr != nil{return nil, childIteratorErr}
+			
+			// evaluate tuple with selected field expression
+			projectedFields := make([]DBValue, len(p.selectFields))
+			for ndx, selectField := range p.selectFields{
+				projDbVal, evalExprErr := selectField.EvalExpr(tuple)
+				if evalExprErr != nil {return nil, evalExprErr}
+				projectedFields[ndx] = projDbVal
+			}
+
+			// construct projected tuple
+			projectedTuple := &Tuple{
+				Desc: *p.Descriptor(),
+				Fields: projectedFields,
+			}
+			
+
+			// ensure that we haven't seen the tuple already
+			if p.distinct &&  !p.seenTuples[projectedTuple.tupleKey()]{
+				// if the projection query requires distinctness,
+				// only add 
+				// ====*==== CHECK do want add case for it already in the seenTuples?
+				return projectedTuple, nil
+			} else {
+				return projectedTuple, nil
+			}
+		}
+
+	}, nil
 }
