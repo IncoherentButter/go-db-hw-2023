@@ -251,136 +251,84 @@ func getFinalizedTuplesIterator(a *Aggregator, groupByList []*Tuple, aggState ma
 	var aggStateNdx int
 	currentNdx = 0
 	aggStateNdx = 0
-	var maxGroupByListLen int 
+	var maxGroupByListLen int
 	maxGroupByListLen = len(groupByList)
-	
+
 	// tupleDesc := a.Descriptor()
 
-	var groupTuple *Tuple 
-	var groupKey any 
+	var groupTuple *Tuple
+	var groupKey any
 	fmt.Printf("groupkey = %v\n", groupKey)
 
 	var groupAggStates *[]AggState
 	// var groupAggState AggState
-	var isAggState bool 
+	var isAggState bool
 
 	groupTuple = groupByList[currentNdx]
 	groupKey = groupTuple.tupleKey()
 
 	groupAggStates, isAggState = aggState[groupKey]
-	if !isAggState{
+	if !isAggState {
 		return func() (*Tuple, error) {
 			return nil, fmt.Errorf("no agg state with associated groupKey = %v", groupKey)
 		}
 	}
-	var maxAggStatesLen int 
+	var maxAggStatesLen int
 	maxAggStatesLen = len(*groupAggStates)
-	
-
-	
-
 
 	return func() (*Tuple, error) {
 		// TODO: some code goes here
 		// fmt.Printf("current index = %v\n", currentNdx)
 		// no more tuples to group
-		if currentNdx > maxGroupByListLen {
+		if currentNdx >= maxGroupByListLen {
 			fmt.Printf("currentNdx= %v > groupByList length, %v\n", currentNdx, len(groupByList))
 			return nil, nil
 		}
-		if aggStateNdx > maxAggStatesLen {
-			fmt.Printf("aggStateNdx = %v > groupAggStates length, %v\n", aggStateNdx, len(*groupAggStates))
-			return nil, nil
-		}
-		
+		// if aggStateNdx >= maxAggStatesLen {
+		// 	fmt.Printf("aggStateNdx = %v > groupAggStates length, %v\n", aggStateNdx, len(*groupAggStates))
+		// 	return nil, nil
+		// }
+		fmt.Printf("aggStateNdx = %v > groupAggStates length, %v\n", aggStateNdx, maxAggStatesLen)
+
+
 		groupTuple = groupByList[currentNdx]
-		groupKey := groupTuple.tupleKey()
+		groupKey = groupTuple.tupleKey()
 		groupAggStates, isAggState := aggState[groupKey]
-		if !isAggState{return nil, fmt.Errorf("no agg state with associated groupKey = %v", groupKey)}
-		
+		if !isAggState {
+			return nil, fmt.Errorf("no agg state with associated groupKey = %v", groupKey)
+		}
+		fmt.Printf("groupTuple = %v\n", groupTuple)
 		for _, groupAggState := range *groupAggStates {
 			tupleField := groupAggState.Finalize()
 			mergedTupleDesc := groupTuple.Desc.merge(tupleField.Desc.copy())
 			groupTuple = joinTuples(groupTuple, tupleField)
 			groupTuple.Desc = *mergedTupleDesc
 		}
-		// groupAggState = (*groupAggStates)[aggStateNdx]
-		// tupleField := groupAggState.Finalize()
+		fmt.Printf("groupTuple = %v\n", groupTuple)
 
-
+		
 
 		tupleFields := make([]DBValue, len(groupTuple.Fields))
 		for ndx, groupTupleField := range groupTuple.Fields {
 			tupleFields[ndx] = groupTupleField
 		}
 
-		finalTuple := &Tuple{
-			Desc:   *a.Descriptor(),
-			Fields: tupleFields,
-			Rid:    groupTuple.Rid,
-		}
 
 		currentNdx += 1
-		aggStateNdx +=1
-		
-		// fmt.Printf("tupleField = %v\nfinalTuple = %v\n", tupleField, finalTuple)
+		aggStateNdx += 1
+
 		return groupTuple, nil
 
-		// return finalTuple, nil // TODO change me
 
-
-		// get AggState object 
-		// groupKey := groupTuple.tupleKey()
-		// groupAggStates, isAggState := aggState[groupKey]
-		// if !isAggState{return nil, fmt.Errorf("no agg state with associated groupKey = %v", groupKey)}
-		// for _, groupAggState := range *groupAggStates{
-		// 	tupleField := groupAggState.Finalize()
-		// }
-
-
-		// if len(*groupAggState) == 0 {
-            // return nil, fmt.Errorf("aggState for groupKey %v is empty", groupKey)
-        // }
-
-		// childIterator, createIteratorErr := p.child.Iterator(tid)
-		// if createIteratorErr != nil{return nil, createIteratorErr}
-		// groupTuple := groupByList[currentNdx]
-		// fmt.Printf("getFinalizedTuplesIterator | groupTuple = %v\n", groupTuple)
-
-		// == need use Finalize() somewhere
-		// groupKey := groupTuple.tupleKey()
-		// groupAggState, isAggState := aggState[groupKey]
-		// if !isAggState{return nil, fmt.Errorf("no agg state with associated groupKey = %v", groupKey)}
-		// fields := make([]*Tuple, len(aggState))
-		// for i, as := range *groupAggState{
-		// 	fields[i] = as.Finalize()
-		// }
-		// var finalAggStateFields []DBValue //hold the fields for each aggregation state
-		// outputDBVals := make([]DBValue, len(groupTuple.Fields))
-		// fmt.Printf("length of groupByList = %v | length of groupAggState = %v\n", len(groupByList), len(*groupAggState))
-		// fmt.Printf("Before modification - outputDBVals: %v\n", outputDBVals)
-
-		// iterate over aggregation states for the group
-		// for ndx, groupTupleField := range groupTuple.Fields {
-			// fmt.Printf("^^^^^^^^\nIndex: %d, groupTupleField: %v, aggState: %v\n", ndx, groupTupleField, (*groupAggState)[ndx])
-
-			// if ndx < len(*groupAggState){
-			// 	// fmt.Printf("getFinalizedTuplesIterator | finalAggStateFields = %v\n", finalAggStateFields)
-			// }
-			// outputDBVals[ndx] = groupTupleField
-			// fmt.Printf("After modification - Index: %d, outputDBVals: %v\n", ndx, outputDBVals)
-		// }
-		// fmt.Printf("outputDBVals =  %v\n", outputDBVals)
-
+		// groupAggState = (*groupAggStates)[aggStateNdx]
+		// tupleField := groupAggState.Finalize()
+		
 		// finalTuple := &Tuple{
 		// 	Desc:   *a.Descriptor(),
-		// 	Fields: outputDBVals,
+		// 	Fields: tupleFields,
 		// 	Rid:    groupTuple.Rid,
 		// }
-		// fmt.Printf("getFinalizedTuplesIterator: %v\n", finalTuple)
-		// fmt.Printf("~!@#~!#@~\nfinal fields = %v\n", finalTuple.Fields)
-		// fmt.Printf("Final outputDBVals before return: %v\n", outputDBVals)
-		return finalTuple, nil // TODO change me
+		// return finalTuple, nil // TODO change me
 	}
 }
 

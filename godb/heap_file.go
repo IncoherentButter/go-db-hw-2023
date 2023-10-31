@@ -291,7 +291,7 @@ func (f *HeapFile) Iterator(tid TransactionID) (func() (*Tuple, error), error) {
 		for repeat {
 			page, err := f.bufPool.GetPage(f, i, tid, 0)
 			if err != nil {
-				return nil, err
+				return nil, fmt.Errorf("Get Page Error")
 			}
 
 			p := (*page).(*heapPage)

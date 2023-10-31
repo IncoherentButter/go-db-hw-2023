@@ -147,7 +147,7 @@ func (a *SumAggState[T]) AddTuple(t *Tuple) {
 
 func (a *SumAggState[T]) GetTupleDesc() *TupleDesc {
 	// TODO: some code goes here
-	tableQualifier := " "
+	tableQualifier := ""
 	fieldType := FieldType{
 		Fname:          a.alias,
 		TableQualifier: tableQualifier,
