@@ -5,7 +5,9 @@ import (
 	"unsafe"
 )
 
-func TestInsertHeapPage(t *testing.T) {
+func 
+
+HeapPage(t *testing.T) {
 	td, t1, t2, hf, _, _ := makeTestVars()
 	pg := newHeapPage(&td, 0, hf)
 	var expectedSlots = (PageSize - 8) / (StringLength + int(unsafe.Sizeof(int64(0))))

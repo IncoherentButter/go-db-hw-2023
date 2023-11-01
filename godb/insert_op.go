@@ -9,7 +9,7 @@ var p = fmt.Printf
 // TODO: some code goes here
 type InsertOp struct {
 	// TODO: some code goes here
-	dbFile DBFile      // specific DBFile being worked on
+	insertFile DBFile      // specific DBFile being worked on
 	pagesModified int64  // num of pages in DBFile that this Insert changed
 	child Operator     // child operator for inserting into the page? 
 }
@@ -19,7 +19,7 @@ type InsertOp struct {
 func NewInsertOp(insertFile DBFile, child Operator) *InsertOp {
 	// TODO: some code goes here
 	return &InsertOp{
-		dbFile: insertFile,
+		insertFile: insertFile,
 		pagesModified: 0,
 		child: child,
 	}
@@ -49,14 +49,19 @@ func (iop *InsertOp) Iterator(tid TransactionID) (func() (*Tuple, error), error)
 	// TODO: some code goes here
 	// how use RecordId? PageNo? SlotNo? offset?
 	// p("iop.pagesModified = %v\n", iop.pagesModified)
+	fmt.Printf("----- begin of insert iterator OUTER func -----\n")
+
+
 
 	// Define iterator 
 	childIterator, createIteratorErr := iop.child.Iterator(tid)
 	if createIteratorErr != nil{
+		fmt.Printf("before iteration, child operator iterator err. Err = %v\n", createIteratorErr)
 		return nil, createIteratorErr
 	}
-
 	var insertionCompleted = false
+
+	insertFile := iop.insertFile
 
 	
 	// var pagesModified int64
@@ -70,10 +75,12 @@ func (iop *InsertOp) Iterator(tid TransactionID) (func() (*Tuple, error), error)
 		Desc: *iop.Descriptor(),
 		Fields: iterationTupleFields,
 	}
-	
 
+	// IDEA:
+	// call childIterator() repeatedly; if tuple is nil, return count tuple. If iteration err
+	// then either A) return count tuple, B) return err, C) ??
 	return func() (*Tuple, error) {
-		
+		fmt.Printf("----- begin of insert iterator inner func -----\n")
 		if insertionCompleted {
 			// insertionCompleted = false
 			// iop.pagesModified = 0
@@ -81,29 +88,38 @@ func (iop *InsertOp) Iterator(tid TransactionID) (func() (*Tuple, error), error)
 		}
 		// check if at end of iterator, stop if so
 		// start, with iteration, check conditions, then end each loop with iteration 
-		for {
+		index := 1
+		for !insertionCompleted {
 			tuple, childIterateErr := childIterator()
 			// if end of tuple, return everything
 			if tuple == nil{
+				// if errors.Is(childIterateErr, io.EOF) {
+				// 	// insertionCompleted = true
+				// 	childIterateErr = nil
+				// }
 				insertionCompleted = true
 				iterationTupleFields[0] = IntField{iop.pagesModified}
 				iterationTuple = Tuple{
 					Desc: *iop.Descriptor(),
 					Fields: iterationTupleFields,
 				}	
+				fmt.Printf("on iteration %v tuple is nil.\nReturning iterationTuple = %v\nor\n%v\n", index, iterationTuple, iterationTuple.PrettyPrintString(true))
 				return &iterationTuple, nil
 			}
 			// if iteration error, return it 
 			if childIterateErr != nil {
+				fmt.Printf("on iteration %v, child iterate error. err = %v\n", index, childIterateErr)
 				// p("Insert: childIterateErr arose\n")
 				return nil, childIterateErr
 			}
 			
- 
-			tupInsertErr := iop.dbFile.insertTuple(tuple, tid)
+			
+			tupInsertErr := insertFile.insertTuple(tuple, tid)
 			if tupInsertErr != nil{
+				fmt.Printf("on iteration %v, tuple insert error. err = %v\n", index, tupInsertErr)
 				return nil, tupInsertErr
 			}
+			index += 1
 			iop.pagesModified += 1	
 			iterationTupleFields[0] = IntField{Value: iop.pagesModified}
 			iterationTuple = Tuple{
@@ -111,6 +127,13 @@ func (iop *InsertOp) Iterator(tid TransactionID) (func() (*Tuple, error), error)
 				Fields: iterationTupleFields,
 			}	
 		}
+		iterationTuple = Tuple{
+			Desc: *iop.Descriptor(),
+			Fields: iterationTupleFields,
+		}	
+		insertionCompleted = false
+		fmt.Printf("on iteration %v tuple is nil.\nReturning iterationTuple = %v\nor\n%v\n", index, iterationTuple, iterationTuple.PrettyPrintString(true))
+		return &iterationTuple, nil
 		// do another insertion
 		return nil, nil
 	}, nil

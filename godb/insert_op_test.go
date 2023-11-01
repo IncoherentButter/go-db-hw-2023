@@ -13,7 +13,7 @@ func TestInsert(t *testing.T) {
 	hf.insertTuple(&t1, tid)
 	bp.CommitTransaction(tid)
 	os.Remove(InsertTestFile)
-6	hf2, _ := NewHeapFile(InsertTestFile, &td, bp)
+	hf2, _ := NewHeapFile(InsertTestFile, &td, bp)
 	if hf2 == nil {
 		t.Fatalf("hf was nil")
 	}

@@ -301,17 +301,23 @@ func (f *HeapFile) Iterator(tid TransactionID) (func() (*Tuple, error), error) {
 			}
 
 			tup, err := iter()
-
-			for tup != nil && tup.Rid == "nil" {
-				tup, err = iter()
+			if err != nil{return nil, err}
+			if tup != nil{
+				return tup, nil
 			}
+			// for tup != nil && tup.Rid == "nil" {
+			// 	tup, err = iter()
+			// }
 
 			if tup == nil {
 				i += 1
 				iter = nil
 			} else {
 				repeat = false
-				t2, e2 = tup, err
+				t2, e2 = tup, nil
+			}
+			if i == f.bufPool.NumPages{
+				break
 			}
 		}
 

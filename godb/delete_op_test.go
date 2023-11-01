@@ -39,7 +39,7 @@ func TestDelete(t *testing.T) {
 		return
 	}
 	bp.CommitTransaction(tid)
-
+	
 	tid = NewTID()
 	bp.BeginTransaction(tid)
 
