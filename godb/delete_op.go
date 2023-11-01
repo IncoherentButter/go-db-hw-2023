@@ -5,6 +5,7 @@ type DeleteOp struct {
 	dbFile DBFile      // specific DBFile being worked on
 	pagesModified int64  // num of pages in DBFile that this Insert changed
 	child Operator     // child operator for inserting into the page? 
+
 }
 
 // Construtor.  The delete operator deletes the records in the child
@@ -16,6 +17,7 @@ func NewDeleteOp(deleteFile DBFile, child Operator) *DeleteOp {
 		pagesModified: 0,
 		child: child,
 	}
+
 }
 
 // The delete TupleDesc is a one column descriptor with an integer field named "count"

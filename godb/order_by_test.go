@@ -70,6 +70,10 @@ func TestOrderBy(t *testing.T) {
 		last = fval
 
 	}
+<<<<<<< HEAD
+=======
+
+>>>>>>> f172fc28198dc86496e73ecd6879cfb9c285166b
 }
 
 // harder order by test that inserts 4 tuples, and alternates ascending vs descending

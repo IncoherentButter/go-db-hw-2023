@@ -1,11 +1,6 @@
 package godb
 
-import (
-	// "fmt"
-	// "reflect"
-
-	"golang.org/x/exp/constraints"
-)
+import "golang.org/x/exp/constraints"
 
 type Number interface {
 	constraints.Integer | constraints.Float

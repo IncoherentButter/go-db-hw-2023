@@ -1,9 +1,5 @@
 package godb
 
-import "fmt"
-
-// import "io"
-
 type EqualityJoin[T comparable] struct {
 	// Expressions that when applied to tuples from the left or right operators,
 	// respectively, return the value of the left or right side of the join

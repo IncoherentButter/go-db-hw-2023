@@ -1,7 +1,5 @@
 package godb
 
-import "fmt"
-
 type Aggregator struct {
 	// Expressions that when applied to tuples from the child operators,
 	// respectively, return the value of the group by key tuple
@@ -87,13 +85,6 @@ func (a *Aggregator) Descriptor() *TupleDesc {
 // aggregation of all child tuples.
 func (a *Aggregator) Iterator(tid TransactionID) (func() (*Tuple, error), error) {
 	// the child iterator
-	// =======debug=======
-	// aggOp := a.child
-	// aggExprs := a.groupByFields
-
-	// fmt.Printf("\naggregator = %v\ntid = %v\n", a, tid)
-
-	// ====end=debug======
 
 	childIter, childIterationErr := a.child.Iterator(tid)
 	if childIterationErr != nil {
@@ -103,11 +94,18 @@ func (a *Aggregator) Iterator(tid TransactionID) (func() (*Tuple, error), error)
 	if childIter == nil {
 		// fmt.Printf("agg_op.Iterator | childIter == nil\n")
 		return nil, GoDBError{MalformedDataError, "child iter unexpectedly nil\n"}
+	// REPO CODE =================================
+	// childIter, err := a.child.Iterator(tid)
+	// if err != nil {
+	// 	return nil, err
+	// }
+	// if childIter == nil {
+	// 	return nil, GoDBError{MalformedDataError, "child iter unexpectedly nil"}
+	// =============================================
 	}
 	// the map that stores the aggregation state of each group
 	aggState := make(map[any]*[]AggState)
 	if a.groupByFields == nil {
-		// fmt.Printf("agg_op.Iterator | a.groupByFields = %v is nil\n", a.groupByFields)
 		var newAggState []AggState
 		for _, as := range a.newAggState {
 			copy := as.Copy()
@@ -120,7 +118,6 @@ func (a *Aggregator) Iterator(tid TransactionID) (func() (*Tuple, error), error)
 
 		aggState[DefaultGroup] = &newAggState
 	}
-
 	// the list of group key tuples
 	var groupByList []*Tuple
 	// the iterator for iterating thru the finalized aggregation results for each group
@@ -149,11 +146,26 @@ func (a *Aggregator) Iterator(tid TransactionID) (func() (*Tuple, error), error)
 				if extractGroupingKeyErr != nil {
 					// fmt.Printf("agg_op.Iterator | extractGroupByKeyTuple(a, t) is not nil\n")
 					return nil, extractGroupingKeyErr
+			// REPO CODE ===============================================================================
+			// 	return nil, err
+			// }
+			// if t == nil {
+			// 	return nil, nil
+			// }
+
+			// if a.groupByFields == nil { // adds tuple to the aggregation in the case of no group-by
+			// 	for i := 0; i < len(a.newAggState); i++ {
+			// 		(*aggState[DefaultGroup])[i].AddTuple(t)
+			// 	}
+			// } else { // adds tuple to the aggregation with grouping
+			// 	keygenTup, err := extractGroupByKeyTuple(a, t)
+			// 	if err != nil {
+			// 		return nil, err
+			// ===========================================================================================
 				}
 
 				key := keygenTup.tupleKey()
 				if aggState[key] == nil {
-					// fmt.Printf("agg_op.Iterator | aggState key for key = %v\n", key)
 					asNew := make([]AggState, len(a.newAggState))
 					aggState[key] = &asNew
 					groupByList = append(groupByList, keygenTup)
@@ -177,6 +189,22 @@ func (a *Aggregator) Iterator(tid TransactionID) (func() (*Tuple, error), error)
 				return tup, nil
 			} else {
 				// fmt.Printf("group by fields in the non-first iteration\n")
+		// REPO CODE ===============================================================
+		// 		addTupleToGrpAggState(a, t, aggState[key])
+		// 	}
+		// }
+
+		// if finalizedIter == nil { // builds the iterator for iterating thru the finalized aggregation results for each group
+		// 	if a.groupByFields == nil {
+		// 		var tup *Tuple
+		// 		for i := 0; i < len(a.newAggState); i++ {
+		// 			newTup := (*aggState[DefaultGroup])[i].Finalize()
+		// 			tup = joinTuples(tup, newTup)
+		// 		}
+		// 		finalizedIter = func() (*Tuple, error) { return nil, nil }
+		// 		return tup, nil
+		// 	} else {
+		// ========================================================================
 				finalizedIter = getFinalizedTuplesIterator(a, groupByList, aggState)
 			}
 		}

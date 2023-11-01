@@ -1,9 +1,6 @@
 package godb
 
-import (
-	"golang.org/x/exp/constraints"
-	// "golang.org/x/text/currency"
-)
+import "golang.org/x/exp/constraints"
 
 type Filter[T constraints.Ordered] struct {
 	op     BoolOp
